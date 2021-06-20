@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { Category, Product } = require('../models/index');
+const { Category, Product, users } = require('../models/index');
 const { randomNumber } = require("../helpers/libs");
+const { getPagination, getPagingData } = require("../helpers/paginate");
 const fs = require("fs-extra");
+const slugify = require('slugify');
 const { check, validationResult } = require('express-validator');
 
 const ctrl = {};
@@ -10,7 +12,12 @@ ctrl.list = async (req,res) => {
 
     try {
 
-        const category = await Category.findAll();
+        const category = await Category.findAll({
+            include: [{
+                model: Product,
+                as: 'products'
+            }]
+        });
 
         return res.status(200).json({
             ok: true,
@@ -30,7 +37,6 @@ ctrl.list = async (req,res) => {
 }
 
 ctrl.create = async (req,res) => {
-
     await check('name').notEmpty().withMessage('El nombre es requerido')
     .custom(async (name) => { 
         const existingCategory = 
@@ -58,9 +64,13 @@ ctrl.create = async (req,res) => {
     const {name} = req.body;
     
     try {
-        
+        var slug = slugify(name, {
+            replacement: '_',
+            lower: true
+        })
         const category = await Category.create({
-            name
+            name,
+            slug
         })
 
         if(category){
@@ -163,43 +173,69 @@ ctrl.modify = async (req,res) => {
 
 ctrl.show = async (req,res) => {
    
-    var id = req.params.id;
+    var {slug} = req.params;
+    var {page, size} = req.query;
 
+    try {
+
+    var {limit, offset} = getPagination(page,size);
+        const category = await Category.findOne({
+            where: {
+                slug
+            },
+        });
         
-        const category = await Category.findByPk(
-            id,
-            {
-                include:[{
-                     model: Product,
-                     as: 'products'
-                }]
-            }
-        );
-
         if(category){
+
+            const appsFilter = await Product.findAndCountAll({
+                where: {
+                    categoryId: category.id
+                },
+                limit,
+                offset,
+                include: [{
+                    model: users,
+                    as: 'users'
+                },
+                {
+                    model: Category,
+                    as: 'categories'
+                }]
+            })
+
+            const apps = getPagingData(appsFilter, page, limit);
 
             res.status(200).json({
                 ok: true,
                 message: 'Categoria encontrada',
-                category
-            }) 
+                category,
+                apps
+            })
 
         }else{
 
-        res.status(404).json({
+            res.status(404).json({
+                ok: false,
+                message: 'Categoria no encontrada'
+            })
+
+        }
+
+    } catch (error) {
+
+        res.status(500).json({
             ok: false,
-            message: 'Categoria no encontrada'
-        }) 
+            message: 'Ha ocurrido un error',
+            error
+        })
 
     }
-
 
 }
 
 ctrl.delete = async (req,res) => {
    
     const id = req.params.id;
-
 
         const category = await Category.findOne({
             where: {
@@ -232,7 +268,6 @@ ctrl.delete = async (req,res) => {
 
             }
 
-
         }else{
 
             return res.status(404).json({
@@ -241,8 +276,6 @@ ctrl.delete = async (req,res) => {
             })
 
         }
-
-   
 
 }
 

@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL,
       allowNull: false
     },
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: false
@@ -45,8 +49,8 @@ module.exports = (sequelize, DataTypes) => {
   Product.associate = function(models){
     Product.belongsTo(models.users, { as: "users", foreignKey: "userId" });
     Product.belongsTo(models.Category, { as: "categories", foreignKey: "categoryId" });
-    Product.belongsToMany(models.Buy, { as: "buys", through: "Buy_Product", foreignKey: "productId" } );
-    Product.hasMany(models.Wish, {as: "Wishes", foreignKey: "productId" });
+    Product.belongsToMany(models.Buy, { as: "buys", through: models.Buy_Product, foreignKey: "productId" } );
+    Product.hasMany(models.Wish, { as: "wishes", foreignKey: "productId" });
   };
 
   return Product;

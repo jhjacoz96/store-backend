@@ -9,67 +9,91 @@ const { check, validationResult } = require('express-validator');
 const ctrl = {};
 
 ctrl.add = async (req,res) => {
+        
+    var {id} = req.body;
 
-        var {id} = req.body;
-
-        const existe = await Wish.findOne({
+        const wish = await Wish.findOne({
             where:{
+                userId: req.user.id,
+                productId: id,
+            },
+            include: [{
+                model: Product,
+                as: 'Products',
+            }],
+        });
+
+        if(wish){
+            await wish.destroy();
+            return res.status(200).json({
+                ok: true,
+                message: 'Aplicacion removida de la lista de deseos',
+                wish,
+            })
+
+        } else {
+            let arg = {
                 userId: req.user.id,
                 productId: id
             }
-        });
+            Wish.create(arg, {
+                include: [{
+                    model: Product,
+                    as: 'Products',
+                }]
+            }).then(async wishh => {
 
-        if(existe){
+                const wish = await Wish.findByPk(wishh.id, {
+                    include: [{
+                        model: Product,
+                        as: 'Products',
+                    }]
+                })
+                
+                res.status(200).json({
+                    ok: true,
+                    message: 'Aplicación agregada a la lista de deseo',
+                    wish,
+                })
+        
+            }).catch(error=>{
+        
+                res.status(500).json({
+                    ok: false,
+                    message: 'Ha ocurrido un error',
+                    error
+                })
 
-            return res.status(402).json({
-                ok: false,
-                menssage: 'Esta aplicación ya se encuentr en su lista de deseos'
             })
 
         }
 
-        Wish.create({
-            userId: req.user.id,
-            productId: id
-        }).then( product => {
-            
-            res.status(200).json({
-                ok: true,
-                menssage: 'Aplicación agregada a la lista de deseo'
-            })
-    
-        }).catch(error=>{
-    
-            res.status(500).json({
-                ok: false,
-                menssage: 'Ha ocurrido un error',
-                error
-            })
-
-        })
-
-    
-    
 }
 
 ctrl.listWish = async (req,res) => {
 
-        const wish = await Wish.findAll({
+    try {
+
+        const listWish = await Wish.findAll({
             where: {
                 userId: req.user.id
             },
             include: [{
                 model: Product,
-                as: 'Products'
+                as: 'Products',
+                include: [{
+                    model: Category,
+                    as: 'categories'
+                }]
             }]
         })
 
-        if(wish){
-
+        if(listWish){
+            console.log(listWish)
             return res.status(200).json({
                 ok: true,
                 message: 'Lista de deseos consultada',
-                wish
+                listWish,
             })
 
         }else{
@@ -81,19 +105,23 @@ ctrl.listWish = async (req,res) => {
 
         }
 
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            message: 'Ha ocurrido un error',
+            error,
+        })
+
+    }
+
 } 
 
 ctrl.delete = async (req,res) => {
 
     try {
 
-
-        const wish = await Wish.findOne({
-            where: {
-                userId: req.user.id,
-                productId: req.params.id
-            }
-        })
+        const wish = await Wish.findByPk(req.params.id)
 
         await wish.destroy();
 

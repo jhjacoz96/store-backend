@@ -2,10 +2,6 @@ import Sequelize from 'sequelize';
 import {sequelize} from '../database/database';
 
 const Apps = sequelize.define('apps', {
-    id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true
-    },
     name: {
         type: Sequelize.VARCHAR
     },

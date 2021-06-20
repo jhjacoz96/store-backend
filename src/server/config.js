@@ -37,7 +37,7 @@ module.exports = app => {
     }).single('image'));*/
 
     app.use(multer({
-       dest: path.join(__dirname, '../public/uploads')
+       dest: path.join(__dirname, '../public/uploads/temp')
     }).single('image'));
  
     app.use(express.urlencoded({
@@ -76,7 +76,7 @@ module.exports = app => {
         })
     })
     );
-
+    
     rols.count().then(c =>{
         if (c <= 0) {
             rols.bulkCreate([
@@ -91,7 +91,7 @@ module.exports = app => {
 
     routes(app);
 
-    app.use(express.static(path.join(__dirname, '../public')));
+    app.use('/public',express.static(path.join(__dirname,'../public')));
 
     return app;
 }

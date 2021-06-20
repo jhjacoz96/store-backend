@@ -23,19 +23,21 @@ ctrl.signIn = async (req, res) => {
         return res.status(422).json({
             errors: errors.array(),
             ok: false,
-            message: 'Ha ocurrido un error'
+            message: `${errors.array()[0].msg}`
         });
     }
 
     const { username, password } = req.body;
 
     try {
-
         const user = await users.findOne({
             where: {
                 username
             },
-            include: "rols"
+            include: [{
+                model: rols,
+                as: 'rols'
+            }]
         }
         );
 
@@ -123,13 +125,12 @@ ctrl.signUp = async (req, res) => {
         } 
     }).run(req)
 
-    const errors = validationResult(req) 
-
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
         return res.status(422).json({
             errors: errors.array(),
             ok: false,
-            message: 'Ha ocurrido un error'
+            message: `${errors.array()[0].msg}`
         });
     }
 
@@ -139,14 +140,20 @@ ctrl.signUp = async (req, res) => {
 
         let passwordd = bcrypt.hashSync(password, Number.parseInt(authConfig.rounds))
 
-        const user = await users.create({
+        const response = await users.create({
             username,
             email,
             password: passwordd,
-            rolId
+            rolId,
         });
 
-        if(user){
+        if(response){
+            const user = await users.findByPk(response.id, {
+                include: [{
+                    model: rols,
+                    as: 'rols',
+                }]
+            })
             let token = jwt.sign(
                 { user }, 
                 authConfig.secret, {
@@ -159,7 +166,6 @@ ctrl.signUp = async (req, res) => {
                 message: "Registro realizado con éxito",
                 token,
                 user,
-                rol
             });
         }
 

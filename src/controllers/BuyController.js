@@ -9,77 +9,91 @@ const { check, validationResult } = require('express-validator');
 const ctrl = {};
 
 ctrl.buy = (req,res) => {
+    const { cart, price } = req.body;
 
-    try {
+        // if (req.session.cart) {
 
-        if (req.session.cart) {
+            // var cart = new Cart(req.session.cart);
 
-            var cart = new Cart(req.session.cart);
+            // const products = cart.generateArray();
 
-            const products = cart.generateArray();
+            /*Buy.findAll({
+                where: {
+                    userId: req.user.id
+                },
+                include: [{
+                    model: Product,
+                    as: 'products'
+                }]
+            }).then(buys => {
+                var res = buys.some(buy => {
+                    var res1 = buy.products.some(product => {
+                        var res2 = cart.some(cart => {
+                            if (cart.id === product.id) {
+                                var prod = product
+                                return cart.id === product.id
+                            }
+                        })
+                        return res2
+                    })
+                    return res1
+                })
+                console.log(prod)
+            })*/
 
             Buy.create({
-
-                price: cart.totalPrice,
+                price,
+                // price: cart.totalPrice,
                 userId: req.user.id
 
-            }).then( async buy =>{
+            }).then(async buy =>{
+                for(var prod in cart){
 
-                for(var prod in products){
-
-                    const product = [];
-                    product = await Product.findByPk(products[prod].item.id);
-
+                    const product = await Product.findByPk(cart[prod].id);
                     if (product) {
 
-                        await  buy.addProduct(product);
+                        await  buy.addProduct(product, {
+                            through: {
+                                price: Number(product.price)
+                            }
+                        })
 
                     }else{
 
                         return res.status(402).json({
                             ok: false,
-                            message: 'el producto no ha sido encontrado'
+                            message: 'el producto no ha sido encontrado',
                         })
 
                     }
 
                 }
 
-                req.session.cart = null;
-
                 return res.status(200).json({
                     ok: true,
-                    message: 'Su compra ha sido realizada con exito'
+                    message: 'Su compra ha sido realizada con éxito'
                 })
+
+                // req.session.cart = null;
 
             }).catch(error => {
 
                 return res.status(500).json({
                     ok: false,
-                    menssage: "Ha ocurrido un error",
-                    error
+                    message: "Ha ocurrido un error",
+                    error,
                 })
 
-            });  
+            });
 
-        }else{
+        /* }else{
 
             return res.status(402).json({ 
                 ok: false,
                 menssage: "No posee productos en su carrito",
             })
 
-        }
-
-    } catch (error) {
-
-        return res.status(500).json({ 
-            ok: false,
-            menssage: "Ha ocurrido un error",
-            error
-        })
-        
-    }
+        } */
 
 }
 
@@ -114,8 +128,6 @@ ctrl.listBuy = async (req,res) => {
 
     }
     
-
-
 }
 
 module.exports = ctrl;
