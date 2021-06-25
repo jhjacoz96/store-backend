@@ -1,0 +1,15 @@
+developer jhjacoz96@gmail.com
+ 
+Pasos para instalar 
+
+1- Clonar https://github.com/jhjacoz96/store-backend.git
+2-instalar postgresSQL
+3- Crear una base de datos llamada postgres
+4- Crear en la raiz del proyecto el archivo .env con el archivo suministrado
+5- Copiar el .env.example en .env
+6-Dirigete a config/database.js y configura tu base de datos con tus credenciales, de postgres (username, password, database). Las credenciales también debe configurarlas en el .env (DB_USERNAME, DB_PASSWORD, DB_DATABASE)
+7- Ejecutar el comando en la raiz del proyecto "npm install" (sin comillas)
+8- Ejecutar el comando en la raiz del proyecto "npx sequelize-cli db:migrate" (sin comillas)
+9- Ejecutar la aplicacion con el comando "npm run dev" (sin comillas)
+10- Abrir el navegador wen en la direccion url http://localhost:8000
+11- Para saber esta corriendo su backend, en su consola debe visualizar el siguiente mensaje: "Nos hemos conectado a la base de batos"
